@@ -158,21 +158,29 @@ for (let i = 0; i < 8; i++){
         })
     );
 }
+let fps = 90;
+let interval = 1000 / fps;
+let lastTime = 0;
 
+function animate(currentTime) {
+    requestAnimationFrame(animate);
 
-function animate() {
+    if (currentTime - lastTime < interval) {
+        return; 
+    }
+
+    lastTime = currentTime;
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img_back, 0, 0);
 
     drawUI();
 
-    for (let i = 0; i < 8; i++){
+    for (let i = 0; i < 8; i++) {
         buttons[i].draw();
     }
 
     racoon.draw();
-
-    requestAnimationFrame(animate);
 }
 
-animate();
+requestAnimationFrame(animate);
