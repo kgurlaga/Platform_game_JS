@@ -22,6 +22,25 @@ img_off.src = 'assets/off.png';
 
 let number_dec = Math.floor(Math.random() * 255) + 1;
 
+function checkWin() {
+    let current_dec_value = 0;
+    for (let i = 0; i < 8; i++){
+        current_dec_value += buttons[i].value * Math.pow(2, 7 - i);
+    }
+
+    ctx.fillStyle = "#FFD38D";
+    ctx.font = "32px Arial";
+    ctx.fillText(current_dec_value, 15, 40);
+
+    if (current_dec_value == number_dec) {
+        ctx.fillStyle = "#32140F";
+        ctx.fillRect(300, 20, 630, 70);
+        ctx.font = "48px Arial";
+        ctx.fillStyle = "#FFD38D";
+        ctx.fillText("Poprawna liczba! You win!", 330, 70);
+    }
+}
+
 const cursor = {
     x: 0,
     y: 0
@@ -52,7 +71,8 @@ canvas.addEventListener('mousemove', function (evt) {
 
 const key = {
     a: { pressed: false },
-    d: { pressed: false }
+    d: { pressed: false },
+    w: { pressed: false }
 }
 
 let current_key = '';
@@ -67,6 +87,11 @@ window.addEventListener('keydown', function (evt) {
         key.d.pressed = true;
         current_key = 'd';
     }
+
+    if (evt.key == 'w') {
+        key.w.pressed = true;
+        current_key = 'w';
+    }
 });
 
 window.addEventListener('keyup', function (evt) {
@@ -79,7 +104,12 @@ window.addEventListener('keyup', function (evt) {
         key.d.pressed = false;
         racoon.state = 'idle';
     }
-})
+
+    if (evt.key == 'w') {
+        key.w.pressed = false;
+        racoon.state = 'idle';
+    }
+});
 
 function drawUI() {
     
@@ -101,6 +131,47 @@ class Character {
         this.frame = 0;
         this.maxframes = 10;
         this.state = 'idle';
+        this.velocity = 0;
+        this.weight = 1;
+        this.switched = false;
+    }
+
+    isStanding() {
+        return this.pos.y >= 485;
+    }
+
+    jump() {
+        if (key.w.pressed && this.isStanding()) this.velocity = -19;
+        this.pos.y += this.velocity;
+
+        if (!this.isStanding()) {
+            this.velocity += this.weight;
+            this.switchButton();
+        }
+        else {
+            this.velocity = 0;
+            this.state = 'idle';
+            this.switched = false;
+        }
+    }
+
+    switchButton() {
+        for (let i = 0; i < 8; i++){
+            let start = i * 150;
+            let end = i * 150 + 150;
+
+            if (this.pos.x + 80 >= start && this.pos.x + 80 <= end && this.pos.y <= 300 && !this.switched) {
+                if (buttons[i].value == 0) {
+                    buttons[i].value = 1;
+                    buttons[i].img = img_on;
+                }
+                else {
+                    buttons[i].value = 0;
+                    buttons[i].img = img_off;
+                }
+                this.switched = true;
+            }
+        }
     }
 
     draw() {
@@ -116,12 +187,18 @@ class Character {
             this.state = 'walk_l';
         }
 
+        else if (key.w.pressed && current_key == 'w') {
+            this.state = 'jump';
+        }
+
         if (this.state == 'idle') this.img = img_idle;
         if (this.state == 'walk_r') this.img = img_walk_r;
         if (this.state == 'walk_l') this.img = img_walk_l;
 
         if (this.frame < this.maxframes) this.frame++;
         else this.frame = 0;
+
+        this.jump();
         
     }
 }
@@ -181,6 +258,8 @@ function animate(currentTime) {
     }
 
     racoon.draw();
+
+    checkWin();
 }
 
 requestAnimationFrame(animate);
